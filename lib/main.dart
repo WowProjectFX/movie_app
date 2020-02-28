@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:movie_app/pages/main_page.dart';
 
 void main() => runApp(MyApp());
@@ -11,8 +12,11 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
           primarySwatch: Colors.amber,
-          accentColor: Colors.amberAccent
-      ),
+          accentColor: Colors.amberAccent,
+          textTheme: GoogleFonts.latoTextTheme(
+            Theme.of(context).textTheme,
+          ),
+        ),
       home: MyHomePage (),
     );
   }

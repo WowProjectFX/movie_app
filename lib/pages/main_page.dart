@@ -2,23 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:movie_app/constants/movie_db_provider_const.dart';
 import 'package:movie_app/data/provider/movies_notifier.dart';
 import 'package:movie_app/repository/movie_db_provider.dart';
+import 'package:movie_app/widgets/post_pager.dart';
 import 'package:provider/provider.dart';
 
 const double SCALE_FACTOR = 0.9;
 const double VIEW_PORT_FACTOR = 0.7;
 
 class MyHomePage extends StatefulWidget {
-
-
-
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 0;
-  PageController _pageController;
-  Page _page = Page();
+  static int _selectedIndex = 0;
+  static PageController _pageController;
+  static Page _page = Page();
+  static Size size;
+
+  static double nowPlayingTop = 16;
+  static double posterTop = 72;
+  static double ratingTop = size.width + posterTop + 8;
+  static double titleTop = ratingTop + 18 + 8;
+  static double genreTop = titleTop + 28 + 8;
 
   static const TextStyle optionStyle =
       TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
@@ -65,6 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    size = MediaQuery.of(context).size;
     return Scaffold(
       bottomNavigationBar: BottomNavigationBar(
         items: _bnbItems,
@@ -72,68 +78,77 @@ class _MyHomePageState extends State<MyHomePage> {
         selectedItemColor: Theme.of(context).accentColor,
         onTap: _onBottomItemTapped,
       ),
-      body: Column(
-        children: <Widget>[
-          TextField(),
-          Text('Now Playing'),
-          Expanded(
-            child: MultiProvider(
-              providers: [
-                ChangeNotifierProvider.value(value: moviesNotifier),
-                ChangeNotifierProvider.value(value: _page),
-              ],
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Consumer<MoviesNotifier>(
-                  builder: (context, movieNotifier, child) {
-                    return PageView.builder(
-                      controller: _pageController,
-                      itemBuilder: (context, index) {
-                        return Consumer<Page>(
-                          builder: (context, page, child) {
-                            double scale =
-                                1 + (SCALE_FACTOR - 1) * (page.value - index).abs();
-                            return Poster(scale: scale, img: movieNotifier.movies[index].posterPath);
-                          },
-                        );
-                      },
-                      itemCount: movieNotifier.movies.length,
-                    );
-                  },
+      body: SafeArea(
+        child: Container(
+          constraints: BoxConstraints.expand(),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              TextField(),
+              Positioned(
+                top: nowPlayingTop,
+                left: 16,
+                height: 40,
+                child: FittedBox(
+                  child: Text(
+                    'Now Playing',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-            ),
+              Positioned(
+                top: ratingTop,
+                left: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(color: Colors.blueGrey[800])),
+                      child: Text(
+                        'IMDB',
+                        style: TextStyle(
+                            fontSize: 14, color: Colors.blueGrey[800]),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 4,
+                    ),
+                    Text(
+                      '8.4',
+                      style:
+                          TextStyle(fontSize: 14, color: Colors.blueGrey[800]),
+                    )
+                  ],
+                ),
+              ),
+              Positioned(
+                  top: titleTop,
+                  left: 16,
+                  child: Text('John Wick: Chapter3 - Parabellum',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ))),
+              Positioned(
+                  top: genreTop,
+                  left: 16,
+                  child: Text('Action, Crime, Thriller',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.bold,
+                      ))),
+              Positioned(
+                  top: posterTop,
+                  left: 0,
+                  right: 0,
+                  height: size.width,
+                  child:
+                      Postpager(page: _page, pageController: _pageController)),
+            ],
           ),
-          Text('IMDB 8.4'),
-          Text('John Wick: Chapter3 - Parabellum'),
-          Text('Action, Crime, Thriller')
-        ],
-      ),
-    );
-  }
-}
-
-class Poster extends StatelessWidget {
-  const Poster({
-    Key key,
-    @required this.scale,
-    @required this.optionStyle,
-    @required this.img,
-  }) : super(key: key);
-
-  final double scale;
-  final TextStyle optionStyle;
-  final String img;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.centerLeft,
-      child: Transform.scale(
-        scale: scale,
-        child: Center(
-          child: Image.network(
-            '$MOVIE_DB_SERVER_IMG_HOST/w300/$img'),
         ),
       ),
     );

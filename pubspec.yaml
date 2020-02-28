@@ -28,6 +28,7 @@ dependencies:
   build_runner: ^1.7.4
   json_serializable: ^3.2.5
   dio: ^3.0.9
+  google_fonts: ^0.3.9
 
 dev_dependencies:
   flutter_test:

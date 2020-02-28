@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-final double SCALE_FACTOR = 0.7;
+final double SCALE_FACTOR = 0.9;
+final double VIEW_PORT_FACTOR = 0.7;
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -35,7 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.7)
+    _pageController = PageController(viewportFraction: VIEW_PORT_FACTOR)
       ..addListener(_onPageViewScrol);
   }
 
@@ -73,10 +74,8 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
             child: ChangeNotifierProvider.value(
               value: _page,
-              child: Transform(
-                transform: Matrix4.diagonal3Values(transScale, transScale, 1)
-                ..setTranslationRaw(
-                    -1 * size.width * (SCALE_FACTOR - 1).abs(), 0, 0),
+              child: AspectRatio(
+                aspectRatio: 1,
                 child: PageView.builder(
                   controller: _pageController,
                   itemBuilder: (context, index) {
@@ -84,21 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       builder: (context, page, child) {
                         double scale =
                             1 + (SCALE_FACTOR - 1) * (page.value - index).abs();
-                        return Container(
-                          child: Center(
-                            child: Transform.scale(
-                                scale: scale,
-                                child: Container(
-                                  color: Colors.primaries[index],
-                                  child: Center(
-                                    child: Text(
-                                      'page: $index',
-                                      style: optionStyle,
-                                    ),
-                                  ),
-                                )),
-                          ),
-                        );
+                        return Poster(scale: scale);
                       },
                     );
                   },
@@ -111,6 +96,31 @@ class _MyHomePageState extends State<MyHomePage> {
           Text('John Wick: Chapter3 - Parabellum'),
           Text('Action, Crime, Thriller')
         ],
+      ),
+    );
+  }
+}
+
+class Poster extends StatelessWidget {
+  const Poster({
+    Key key,
+    @required this.scale,
+    @required this.optionStyle,
+  }) : super(key: key);
+
+  final double scale;
+  final TextStyle optionStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.centerLeft,
+      child: Transform.scale(
+        scale: scale,
+        child: Center(
+          child: Image.network(
+            'https://www.washingtonpost.com/graphics/2019/entertainment/oscar-nominees-movie-poster-design/img/1800/star.jpg'),
+        ),
       ),
     );
   }

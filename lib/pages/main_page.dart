@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:movie_app/constants/movie_db_provider_const.dart';
+import 'package:movie_app/data/provider/movies_notifier.dart';
+import 'package:movie_app/repository/movie_db_provider.dart';
 import 'package:provider/provider.dart';
 
-final double SCALE_FACTOR = 0.9;
-final double VIEW_PORT_FACTOR = 0.7;
+const double SCALE_FACTOR = 0.9;
+const double VIEW_PORT_FACTOR = 0.7;
 
 class MyHomePage extends StatefulWidget {
+
+
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
@@ -36,6 +42,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    movieDBProvider.discoverMovies();
     _pageController = PageController(viewportFraction: VIEW_PORT_FACTOR)
       ..addListener(_onPageViewScrol);
   }
@@ -58,8 +65,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
-    double transScale = 2 - SCALE_FACTOR;
     return Scaffold(
       bottomNavigationBar: BottomNavigationBar(
         items: _bnbItems,
@@ -72,22 +77,29 @@ class _MyHomePageState extends State<MyHomePage> {
           TextField(),
           Text('Now Playing'),
           Expanded(
-            child: ChangeNotifierProvider.value(
-              value: _page,
+            child: MultiProvider(
+              providers: [
+                ChangeNotifierProvider.value(value: moviesNotifier),
+                ChangeNotifierProvider.value(value: _page),
+              ],
               child: AspectRatio(
                 aspectRatio: 1,
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemBuilder: (context, index) {
-                    return Consumer<Page>(
-                      builder: (context, page, child) {
-                        double scale =
-                            1 + (SCALE_FACTOR - 1) * (page.value - index).abs();
-                        return Poster(scale: scale);
+                child: Consumer<MoviesNotifier>(
+                  builder: (context, movieNotifier, child) {
+                    return PageView.builder(
+                      controller: _pageController,
+                      itemBuilder: (context, index) {
+                        return Consumer<Page>(
+                          builder: (context, page, child) {
+                            double scale =
+                                1 + (SCALE_FACTOR - 1) * (page.value - index).abs();
+                            return Poster(scale: scale, img: movieNotifier.movies[index].posterPath);
+                          },
+                        );
                       },
+                      itemCount: movieNotifier.movies.length,
                     );
                   },
-                  itemCount: 5,
                 ),
               ),
             ),
@@ -106,10 +118,12 @@ class Poster extends StatelessWidget {
     Key key,
     @required this.scale,
     @required this.optionStyle,
+    @required this.img,
   }) : super(key: key);
 
   final double scale;
   final TextStyle optionStyle;
+  final String img;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +133,7 @@ class Poster extends StatelessWidget {
         scale: scale,
         child: Center(
           child: Image.network(
-            'https://www.washingtonpost.com/graphics/2019/entertainment/oscar-nominees-movie-poster-design/img/1800/star.jpg'),
+            '$MOVIE_DB_SERVER_IMG_HOST/w300/$img'),
         ),
       ),
     );

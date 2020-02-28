@@ -36,7 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.7)
-    ..addListener(_onPageViewScrol);
+      ..addListener(_onPageViewScrol);
   }
 
   @override
@@ -57,6 +57,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+    double transScale = 2 - SCALE_FACTOR;
     return Scaffold(
       bottomNavigationBar: BottomNavigationBar(
         items: _bnbItems,
@@ -71,32 +73,37 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
             child: ChangeNotifierProvider.value(
               value: _page,
-              child: PageView.builder(
-                controller: _pageController,
-                itemBuilder: (context, index) {
-                  return Consumer<Page>(
-                    builder: (context, page, child) {
-                      double scale = 1 +
-                          (SCALE_FACTOR - 1) * (page.value - index).abs();
-                      return Container(
-                        child: Center(
-                          child: Transform.scale(
-                              scale: scale,
-                              child: Container(
-                                color: Colors.primaries[index],
-                                child: Center(
-                                  child: Text(
-                                    'page: $index',
-                                    style: optionStyle,
+              child: Transform(
+                transform: Matrix4.diagonal3Values(transScale, transScale, 1)
+                ..setTranslationRaw(
+                    -1 * size.width * (SCALE_FACTOR - 1).abs(), 0, 0),
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemBuilder: (context, index) {
+                    return Consumer<Page>(
+                      builder: (context, page, child) {
+                        double scale =
+                            1 + (SCALE_FACTOR - 1) * (page.value - index).abs();
+                        return Container(
+                          child: Center(
+                            child: Transform.scale(
+                                scale: scale,
+                                child: Container(
+                                  color: Colors.primaries[index],
+                                  child: Center(
+                                    child: Text(
+                                      'page: $index',
+                                      style: optionStyle,
+                                    ),
                                   ),
-                                ),
-                              )),
-                        ),
-                      );
-                    },
-                  );
-                },
-                itemCount: 5,
+                                )),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  itemCount: 5,
+                ),
               ),
             ),
           ),

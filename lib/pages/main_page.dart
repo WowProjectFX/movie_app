@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:movie_app/constants/movie_db_provider_const.dart';
+import 'package:movie_app/data/movie_model.dart';
 import 'package:movie_app/data/provider/movies_notifier.dart';
+import 'package:movie_app/data/provider/page_notifier.dart';
 import 'package:movie_app/repository/movie_db_provider.dart';
+import 'package:movie_app/widgets/genre.dart';
+import 'package:movie_app/widgets/movie_title.dart';
 import 'package:movie_app/widgets/post_pager.dart';
+import 'package:movie_app/widgets/rating.dart';
 import 'package:provider/provider.dart';
 
-const double SCALE_FACTOR = 0.9;
-const double VIEW_PORT_FACTOR = 0.7;
+const double side_gap = 16;
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -15,15 +18,14 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   static int _selectedIndex = 0;
-  static PageController _pageController;
-  static Page _page = Page();
   static Size size;
 
-  static double nowPlayingTop = 16;
-  static double posterTop = 72;
-  static double ratingTop = size.width + posterTop + 8;
+  static double searchTop = side_gap;
+  static double nowPlayingTop = searchTop + 66 + side_gap;
+  static double posterTop = nowPlayingTop + 72;
+  static double ratingTop = size.width + posterTop + side_gap;
   static double titleTop = ratingTop + 18 + 8;
-  static double genreTop = titleTop + 28 + 8;
+  static double genreTop = titleTop + 26 + 8;
 
   static const TextStyle optionStyle =
       TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
@@ -48,18 +50,11 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     movieDBProvider.discoverMovies();
-    _pageController = PageController(viewportFraction: VIEW_PORT_FACTOR)
-      ..addListener(_onPageViewScrol);
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
     super.dispose();
-  }
-
-  void _onPageViewScrol() {
-    _page.value = _pageController.page;
   }
 
   void _onBottomItemTapped(int index) {
@@ -67,87 +62,86 @@ class _MyHomePageState extends State<MyHomePage> {
       _selectedIndex = index;
     });
   }
+  void currentPage(int currentPage) {}
 
   @override
   Widget build(BuildContext context) {
     size = MediaQuery.of(context).size;
-    return Scaffold(
-      bottomNavigationBar: BottomNavigationBar(
-        items: _bnbItems,
-        currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).accentColor,
-        onTap: _onBottomItemTapped,
-      ),
-      body: SafeArea(
-        child: Container(
-          constraints: BoxConstraints.expand(),
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              TextField(),
-              Positioned(
-                top: nowPlayingTop,
-                left: 16,
-                height: 40,
-                child: FittedBox(
-                  child: Text(
-                    'Now Playing',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: ratingTop,
-                left: 16,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(color: Colors.blueGrey[800])),
-                      child: Text(
-                        'IMDB',
-                        style: TextStyle(
-                            fontSize: 14, color: Colors.blueGrey[800]),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<MoviesNotifier>.value(value: moviesNotifier),
+        ChangeNotifierProvider<PageNotifier>.value(value: pageNotifier),
+      ],
+      child: ChangeNotifierProvider<MoviesNotifier>.value(
+        value: moviesNotifier,
+        child: Scaffold(
+          backgroundColor: Theme.of(context).backgroundColor,
+          bottomNavigationBar: BottomNavigationBar(
+            items: _bnbItems,
+            currentIndex: _selectedIndex,
+            selectedItemColor: Theme.of(context).accentColor,
+            onTap: _onBottomItemTapped,
+          ),
+          body: SafeArea(
+            child: Container(
+              constraints: BoxConstraints.expand(),
+              child: Consumer2<MoviesNotifier, PageNotifier>(
+                builder: (context, movieNotifier, pageNotifier, child) {
+                  if (movieNotifier.movies.isEmpty) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  MovieModel movieModel =
+                      movieNotifier.movies[pageNotifier.value.floor()];
+                  return Stack(
+                    children: <Widget>[
+                      Positioned(
+                        top: searchTop,
+                        left: side_gap,
+                        right: side_gap,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: TextField(
+                            decoration: InputDecoration(
+                                suffixIcon: Icon(Icons.search),
+                                hintText: 'Search',
+                                border: InputBorder.none,
+                                fillColor: Colors.white,
+                                filled: true),
+                          ),
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      width: 4,
-                    ),
-                    Text(
-                      '8.4',
-                      style:
-                          TextStyle(fontSize: 14, color: Colors.blueGrey[800]),
-                    )
-                  ],
-                ),
+                      Positioned(
+                        top: nowPlayingTop,
+                        left: side_gap,
+                        height: 40,
+                        child: FittedBox(
+                          child: Text(
+                            'Now Playing',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: ratingTop,
+                        left: side_gap,
+                        child: Rating(movieModel.voteAverage),
+                      ),
+                      Positioned(
+                          top: titleTop,
+                          left: side_gap,
+                          child: MovieTitle(movieModel.originalTitle)),
+                      Positioned(top: genreTop, left: side_gap, child: Genre()),
+                      Positioned(
+                          top: posterTop,
+                          left: 0,
+                          right: 0,
+                          height: size.width,
+                          child: PostPager()),
+                    ],
+                  );
+                },
               ),
-              Positioned(
-                  top: titleTop,
-                  left: 16,
-                  child: Text('John Wick: Chapter3 - Parabellum',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ))),
-              Positioned(
-                  top: genreTop,
-                  left: 16,
-                  child: Text('Action, Crime, Thriller',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold,
-                      ))),
-              Positioned(
-                  top: posterTop,
-                  left: 0,
-                  right: 0,
-                  height: size.width,
-                  child:
-                      Postpager(page: _page, pageController: _pageController)),
-            ],
+            ),
           ),
         ),
       ),
@@ -155,13 +149,3 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class Page extends ChangeNotifier {
-  double _page = 0;
-
-  double get value => _page;
-
-  set value(double page) {
-    _page = page;
-    notifyListeners();
-  }
-}
